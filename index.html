@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shakes_Warrior Donation Collection Manager</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Shakes_Warrior Donation Collection Manager</h1>
+        <p>Welcome to Shakes Warrior's Donation Collection Manager. If you have a donation item or items and would like to schedule a collection, please complete the form below. We thank you for your support!</p>
+        <p><strong>NOTE:</strong> No information provided will be shared with any third party</p>
+        
+        <form id="donationForm">
+            <div class="form-group">
+                <label for="name">Name:</label>
+                <input type="text" id="name" name="name" required>
+            </div>
+            <div class="form-group">
+                <label for="address">Address:</label>
+                <input type="text" id="address" name="address" required>
+            </div>
+            <div class="form-group">
+                <label for="area">Area:</label>
+                <input type="text" id="area" name="area" required>
+            </div>
+            <div class="form-group">
+                <label for="availableTime">Available Time:</label>
+                <select id="availableTime" name="availableTime" required>
+                    <option value="Anytime">Anytime</option>
+                    <script>
+                        for (let i = 7; i <= 22; i++) {
+                            let time = i + ":00 " + (i < 12 ? "AM" : "PM");
+                            document.write(`<option value="${time}">${time}</option>`);
+                        }
+                    </script>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="contactNumber">Contact Number:</label>
+                <input type="text" id="contactNumber" name="contactNumber" required>
+            </div>
+            <div class="form-group">
+                <label for="altContactName">Alternative Contact Name:</label>
+                <input type="text" id="altContactName" name="altContactName">
+            </div>
+            <div class="form-group">
+                <label for="altContactNumber">Alternative Contact Number:</label>
+                <input type="text" id="altContactNumber" name="altContactNumber">
+            </div>
+            <button type="submit">Schedule Collection</button>
+        </form>
+        
+       
+    </div>
+
+    <img src="box.png" width="200" height="200" alt="Box Image" id="boxImage" style="cursor: pointer; margin-top: 20px;">
+    <!-- Company Logo -->
+    <img src="company-logo.png" alt="Company Logo" class="company-logo">
+    <footer>
+        @ 2024 Shakes_Warrior Donation Collection Manager - Developed by Soft Serv Supplies (Pty) Ltd.
+    </footer>
+
+    <script src="script.js"></script>
+    <script>
+        document.getElementById('donationForm').addEventListener('submit', function(event) {
+            event.preventDefault(); // Prevent form submission to server
+
+            // Create an object to store the form data
+            const donation = {
+                name: document.getElementById('name').value,
+                address: document.getElementById('address').value,
+                area: document.getElementById('area').value,
+                availableTime: document.getElementById('availableTime').value,
+                contactNumber: document.getElementById('contactNumber').value,
+                altContactName: document.getElementById('altContactName').value,
+                altContactNumber: document.getElementById('altContactNumber').value,
+                status: 'Pending Collection'
+            };
+
+            // Save the data to localStorage
+            let donations = JSON.parse(localStorage.getItem('donations')) || [];
+            donations.push(donation);
+            localStorage.setItem('donations', JSON.stringify(donations));
+
+            // Display the toast message
+            showToast(`Thank you ${donation.name}, your donation has been scheduled.`);
+
+            // Reset the form after submission
+            this.reset();
+        });
+
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+
+            setTimeout(function() {
+                toast.classList.add('fade-out');
+                toast.addEventListener('transitionend', function() {
+                    toast.remove();
+                });
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

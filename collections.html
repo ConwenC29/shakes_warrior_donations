@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Collections</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Scheduled Collections</h1>
+        <div class="button-container">
+            <button onclick="clearCollected()">Clear Collected Donations</button>
+            <button onclick="goHome()">Home</button>
+        </div>
+        <table id="collectionsTable">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Address</th>
+                    <th>Area</th>
+                    <th>Available Time</th>
+                    <th>Contact Number</th>
+                    <th>Alternative Contact Name</th>
+                    <th>Alternative Contact Number</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody id="collectionsBody">
+                <!-- Collections will be populated here -->
+            </tbody>
+        </table>
+    </div>
+
+    <div id="collectionCountMessage"></div>
+
+    <footer>
+        @ 2024 Shakes_Warrior Donation Collection Manager - Developed by Soft Serv Supplies (Pty) Ltd.
+    </footer>
+
+    <script src="script.js"></script>
+    <script>
+        function loadCollections() {
+    const donations = JSON.parse(localStorage.getItem('donations')) || [];
+    const tableBody = document.getElementById('collectionsBody');
+    tableBody.innerHTML = '';
+
+    // Sort donations by the 'Area' field
+    donations.sort((a, b) => {
+        if (a.area < b.area) return -1;
+        if (a.area > b.area) return 1;
+        return 0;
+    });
+
+    let pendingCount = 0; // Initialize the counter for pending collections
+
+    donations.forEach((donation, index) => {
+        const row = document.createElement('tr');
+
+        Object.keys(donation).forEach(key => {
+            const cell = document.createElement('td');
+
+            if (key === 'address') {
+                // Create a Google Maps link for the address
+                const addressLink = document.createElement('a');
+                addressLink.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(donation.address)}`;
+                addressLink.textContent = donation.address;
+                addressLink.target = '_blank'; // Open in a new tab
+                cell.appendChild(addressLink);
+            } else {
+                cell.textContent = donation[key];
+            }
+
+            row.appendChild(cell);
+        });
+
+        // Add status dropdown
+        const statusCell = document.createElement('td');
+        const statusSelect = document.createElement('select');
+        statusSelect.innerHTML = `
+            <option value="Pending Collection" ${donation.status === 'Pending Collection' ? 'selected' : ''}>Pending Collection</option>
+            <option value="Collected" ${donation.status === 'Collected' ? 'selected' : ''}>Collected</option>
+        `;
+        statusSelect.addEventListener('change', function() {
+            donations[index].status = this.value;
+            localStorage.setItem('donations', JSON.stringify(donations));
+            loadCollections(); // Reload the table and update the count message
+        });
+        statusCell.appendChild(statusSelect);
+        row.appendChild(statusCell);
+
+        tableBody.appendChild(row);
+
+        // Increment the pending count if the status is "Pending Collection"
+        if (donation.status === 'Pending Collection') {
+            pendingCount++;
+        }
+    });
+
+    // Display the pending count message
+    const collectionCountMessage = document.getElementById('collectionCountMessage');
+    collectionCountMessage.textContent = `You have ${pendingCount} donations to be collected.`;
+}
+        function clearCollected() {
+            let donations = JSON.parse(localStorage.getItem('donations')) || [];
+            donations = donations.filter(donation => donation.status !== 'Collected');
+            localStorage.setItem('donations', JSON.stringify(donations));
+            loadCollections(); // Refresh the table
+        }
+
+        // Load collections on page load
+        window.onload = loadCollections;
+
+        function goHome() {
+    window.location.href = 'index.html'; // Replace with the correct path if different
+}
+
+    </script>
+</body>
+</html>
