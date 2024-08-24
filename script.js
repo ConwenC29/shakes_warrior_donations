@@ -1,68 +1,57 @@
-// Handle form submission
-document.getElementById('donationForm').addEventListener('submit', function(event) {
-    event.preventDefault();
+// Initialize Supabase client
+const supabaseUrl = 'https://ritieslzfvjxgpfayzzg.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJpdGllc2x6ZnZqeGdwZmF5enpnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjQ1MTYwNzUsImV4cCI6MjA0MDA5MjA3NX0.2FWU35eUL470Jx6FsKEaM9IXcWJSLpnRgTSI56YgXsY';
+const supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-    let name = document.getElementById('name').value;
-    let address = document.getElementById('address').value;
-    let area = document.getElementById('area').value;
-    let availableTime = document.getElementById('time').value;
-    let contactNumber = document.getElementById('contactNumber').value;
-    let altContactName = document.getElementById('altContactName').value;
-    let altContactNumber = document.getElementById('altContactNumber').value;
+document.getElementById('donationForm').addEventListener('submit', async function(event) {
+    event.preventDefault(); // Prevent form submission to server
 
-    let donation = {
-        name,
-        address,
-        area,
-        availableTime,
-        contactNumber,
-        altContactName,
-        altContactNumber,
-        status: "Pending Collection"
+    // Create an object to store the form data
+    const donation = {
+        Name: document.getElementById('name').value,
+        Address: document.getElementById('address').value,
+        Area: document.getElementById('area').value,
+        AvailableTime: document.getElementById('availableTime').value,
+        ContactNumber: document.getElementById('contactNumber').value,
+        AltName: document.getElementById('altContactName').value,
+        AltNumber: document.getElementById('altContactNumber').value,
+        Status: 'Pending Collection' // Default status
     };
 
-    // Send donation data to the server
-    fetch('/api/collections', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(donation)
-    })
-    .then(response => response.text())
-    .then(data => {
-        // Show toast message
-        showToast(`Thank you ${name}, your donation has been scheduled.`);
-        // Clear the form
-        document.getElementById('donationForm').reset();
-    })
-    .catch(error => console.error('Error:', error));
+    try {
+        // Send the form data to the server
+        const response = await fetch('/api/collections', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(donation)
+        });
+
+        if (!response.ok) throw new Error('Failed to schedule the collection.');
+
+        // Display the toast message
+        showToast(`Thank you ${donation.Name}, your donation has been scheduled.`);
+
+        // Reset the form after submission
+        this.reset();
+
+    } catch (error) {
+        console.error('Error scheduling the collection:', error.message);
+        showToast('An error occurred while scheduling the collection. Please try again later.');
+    }
 });
 
-// Function to display toast messages
 function showToast(message) {
-    let toast = document.createElement('div');
+    const toast = document.createElement('div');
     toast.className = 'toast';
     toast.textContent = message;
     document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 3000);
-}
 
-// Handle password prompt for viewing collections
-function promptPassword() {
-    let password = prompt("Please enter the password to view collections:");
-    if (password === "$Collect$") {
-        window.location.href = "collections.html";
-    } else {
-        alert("You are not authorized to view this page.");
-    }
+    setTimeout(function() {
+        toast.classList.add('fade-out');
+        toast.addEventListener('transitionend', function() {
+            toast.remove();
+        });
+    }, 3000);
 }
-
-document.getElementById('boxImage').addEventListener('click', function() {
-    let password = prompt("Please enter the password to view collections:");
-    if (password === "$Collect$") {
-        window.location.href = "collections.html";
-    } else {
-        alert("You are not authorized to view this page.");
-    }
-});

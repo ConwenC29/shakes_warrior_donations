@@ -1,6 +1,15 @@
-document.addEventListener('DOMContentLoaded', function() {
-    let donations = JSON.parse(localStorage.getItem('donations')) || [];
+document.addEventListener('DOMContentLoaded', async function() {
+    const { data: donations, error } = await supabase
+        .from('Collections')
+        .select('*');
+
+    if (error) {
+        console.error('Error fetching collections:', error);
+        return;
+    }
+
     let tbody = document.querySelector('#collectionsTable tbody');
+    tbody.innerHTML = ''; // Clear any existing rows
 
     donations.forEach((donation, index) => {
         let row = document.createElement('tr');
@@ -24,6 +33,16 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (status === donation[key]) option.selected = true;
                     statusSelect.appendChild(option);
                 });
+                statusSelect.addEventListener('change', async function() {
+                    const { error } = await supabase
+                        .from('Collections')
+                        .update({ status: this.value })
+                        .match({ id: donation.id });
+
+                    if (error) {
+                        console.error('Error updating status:', error);
+                    }
+                });
                 cell.appendChild(statusSelect);
             } else {
                 cell.textContent = donation[key];
@@ -36,30 +55,31 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // Function to clear collected donations
-function clearCollected() {
-    let donations = JSON.parse(localStorage.getItem('donations')) || [];
-    donations = donations.filter(donation => donation.status !== "Collected");
-    localStorage.setItem('donations', JSON.stringify(donations));
-    window.location.reload();
-}
+async function clearCollected() {
+    const { data: donations, error } = await supabase
+        .from('Collections')
+        .select('*');
 
-document.getElementById('clearCollectedBtn').addEventListener('click', function() {
-    // Get the table body
-    const tableBody = document.querySelector('#collectionGrid tbody');
-
-    // Iterate through the rows in reverse order
-    for (let i = tableBody.rows.length - 1; i >= 0; i--) {
-        const row = tableBody.rows[i];
-        
-        // Get the status cell and check its value
-        const statusCell = row.cells[7]; // Assuming 'Status' is the 8th column (index 7)
-        const statusValue = statusCell.querySelector('select').value;
-
-        if (statusValue === 'Collected') {
-            // Remove the row if status is 'Collected'
-            tableBody.deleteRow(i);
-        }
+    if (error) {
+        console.error('Error fetching collections:', error);
+        return;
     }
 
-    // Optionally, you could save the updated table data back to localStorage or another storage method
-});
+    const collectedDonations = donations.filter(donation => donation.status === 'Collected');
+    const idsToDelete = collectedDonations.map(donation => donation.id);
+
+    if (idsToDelete.length > 0) {
+        const { error: deleteError } = await supabase
+            .from('Collections')
+            .delete()
+            .in('id', idsToDelete);
+
+        if (deleteError) {
+            console.error('Error deleting collected donations:', deleteError);
+        } else {
+            window.location.reload(); // Refresh the page to reflect changes
+        }
+    }
+}
+
+document.getElementById('clearCollectedBtn').addEventListener('click', clearCollected);

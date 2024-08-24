@@ -38,83 +38,118 @@
         @ 2024 Shakes_Warrior Donation Collection Manager - Developed by Soft Serv Supplies (Pty) Ltd.
     </footer>
 
+    <!-- Include Supabase client library -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/supabase.js"></script>
+    <!-- Include script.js file -->
     <script src="script.js"></script>
     <script>
-        function loadCollections() {
-    const donations = JSON.parse(localStorage.getItem('donations')) || [];
-    const tableBody = document.getElementById('collectionsBody');
-    tableBody.innerHTML = '';
+        // Initialize Supabase client
+        const supabaseUrl = 'https://ritieslzfvjxgpfayzzg.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJpdGllc2x6ZnZqeGdwZmF5enpnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjQ1MTYwNzUsImV4cCI6MjA0MDA5MjA3NX0.2FWU35eUL470Jx6FsKEaM9IXcWJSLpnRgTSI56YgXsY';
+        const supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-    // Sort donations by the 'Area' field
-    donations.sort((a, b) => {
-        if (a.area < b.area) return -1;
-        if (a.area > b.area) return 1;
-        return 0;
-    });
+        async function loadCollections() {
+            try {
+                const { data, error } = await supabase
+                    .from('Collections') // Your table name
+                    .select('*');
 
-    let pendingCount = 0; // Initialize the counter for pending collections
+                if (error) throw error;
 
-    donations.forEach((donation, index) => {
-        const row = document.createElement('tr');
+                const tableBody = document.getElementById('collectionsBody');
+                tableBody.innerHTML = '';
 
-        Object.keys(donation).forEach(key => {
-            const cell = document.createElement('td');
+                // Sort donations by the 'Area' field
+                data.sort((a, b) => {
+                    if (a.Area < b.Area) return -1;
+                    if (a.Area > b.Area) return 1;
+                    return 0;
+                });
 
-            if (key === 'address') {
-                // Create a Google Maps link for the address
-                const addressLink = document.createElement('a');
-                addressLink.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(donation.address)}`;
-                addressLink.textContent = donation.address;
-                addressLink.target = '_blank'; // Open in a new tab
-                cell.appendChild(addressLink);
-            } else {
-                cell.textContent = donation[key];
+                let pendingCount = 0; // Initialize the counter for pending collections
+
+                data.forEach((donation, index) => {
+                    const row = document.createElement('tr');
+
+                    Object.keys(donation).forEach(key => {
+                        const cell = document.createElement('td');
+
+                        if (key === 'Address') {
+                            // Create a Google Maps link for the address
+                            const addressLink = document.createElement('a');
+                            addressLink.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(donation.Address)}`;
+                            addressLink.textContent = donation.Address;
+                            addressLink.target = '_blank'; // Open in a new tab
+                            cell.appendChild(addressLink);
+                        } else {
+                            cell.textContent = donation[key];
+                        }
+
+                        row.appendChild(cell);
+                    });
+
+                    // Add status dropdown
+                    const statusCell = document.createElement('td');
+                    const statusSelect = document.createElement('select');
+                    statusSelect.innerHTML = `
+                        <option value="Pending Collection" ${donation.Status === 'Pending Collection' ? 'selected' : ''}>Pending Collection</option>
+                        <option value="Collected" ${donation.Status === 'Collected' ? 'selected' : ''}>Collected</option>
+                    `;
+                    statusSelect.addEventListener('change', async function() {
+                        try {
+                            const { data, error } = await supabase
+                                .from('Collections')
+                                .update({ Status: this.value })
+                                .eq('id', donation.id); // Assuming you have a unique ID for each record
+                            
+                            if (error) throw error;
+
+                            loadCollections(); // Reload the table and update the count message
+                        } catch (error) {
+                            console.error('Error updating status:', error.message);
+                        }
+                    });
+                    statusCell.appendChild(statusSelect);
+                    row.appendChild(statusCell);
+
+                    tableBody.appendChild(row);
+
+                    // Increment the pending count if the status is "Pending Collection"
+                    if (donation.Status === 'Pending Collection') {
+                        pendingCount++;
+                    }
+                });
+
+                // Display the pending count message
+                const collectionCountMessage = document.getElementById('collectionCountMessage');
+                collectionCountMessage.textContent = `You have ${pendingCount} donations to be collected.`;
+
+            } catch (error) {
+                console.error('Error loading collections:', error.message);
             }
-
-            row.appendChild(cell);
-        });
-
-        // Add status dropdown
-        const statusCell = document.createElement('td');
-        const statusSelect = document.createElement('select');
-        statusSelect.innerHTML = `
-            <option value="Pending Collection" ${donation.status === 'Pending Collection' ? 'selected' : ''}>Pending Collection</option>
-            <option value="Collected" ${donation.status === 'Collected' ? 'selected' : ''}>Collected</option>
-        `;
-        statusSelect.addEventListener('change', function() {
-            donations[index].status = this.value;
-            localStorage.setItem('donations', JSON.stringify(donations));
-            loadCollections(); // Reload the table and update the count message
-        });
-        statusCell.appendChild(statusSelect);
-        row.appendChild(statusCell);
-
-        tableBody.appendChild(row);
-
-        // Increment the pending count if the status is "Pending Collection"
-        if (donation.status === 'Pending Collection') {
-            pendingCount++;
         }
-    });
 
-    // Display the pending count message
-    const collectionCountMessage = document.getElementById('collectionCountMessage');
-    collectionCountMessage.textContent = `You have ${pendingCount} donations to be collected.`;
-}
-        function clearCollected() {
-            let donations = JSON.parse(localStorage.getItem('donations')) || [];
-            donations = donations.filter(donation => donation.status !== 'Collected');
-            localStorage.setItem('donations', JSON.stringify(donations));
-            loadCollections(); // Refresh the table
+        async function clearCollected() {
+            try {
+                const { data, error } = await supabase
+                    .from('Collections')
+                    .delete()
+                    .eq('Status', 'Collected');
+
+                if (error) throw error;
+
+                loadCollections(); // Refresh the table
+            } catch (error) {
+                console.error('Error clearing collected donations:', error.message);
+            }
         }
 
         // Load collections on page load
         window.onload = loadCollections;
 
         function goHome() {
-    window.location.href = 'index.html'; // Replace with the correct path if different
-}
-
+            window.location.href = 'index.html'; // Replace with the correct path if different
+        }
     </script>
 </body>
 </html>

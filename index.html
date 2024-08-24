@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Shakes_Warrior Donation Collection Manager</title>
     <link rel="stylesheet" href="style.css">
+    <!-- Include Supabase client library -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/supabase.js"></script>
 </head>
 <body>
     <div class="container">
@@ -52,58 +54,15 @@
             <button type="submit">Schedule Collection</button>
         </form>
         
-       
     </div>
 
     <img src="box.png" width="200" height="200" alt="Box Image" id="boxImage" style="cursor: pointer; margin-top: 20px;">
-    <!-- Company Logo -->
-    <img src="company-logo.png" alt="Company Logo" class="company-logo">
+  
     <footer>
         @ 2024 Shakes_Warrior Donation Collection Manager - Developed by Soft Serv Supplies (Pty) Ltd.
     </footer>
 
+    <!-- Include script.js file -->
     <script src="script.js"></script>
-    <script>
-        document.getElementById('donationForm').addEventListener('submit', function(event) {
-            event.preventDefault(); // Prevent form submission to server
-
-            // Create an object to store the form data
-            const donation = {
-                name: document.getElementById('name').value,
-                address: document.getElementById('address').value,
-                area: document.getElementById('area').value,
-                availableTime: document.getElementById('availableTime').value,
-                contactNumber: document.getElementById('contactNumber').value,
-                altContactName: document.getElementById('altContactName').value,
-                altContactNumber: document.getElementById('altContactNumber').value,
-                status: 'Pending Collection'
-            };
-
-            // Save the data to localStorage
-            let donations = JSON.parse(localStorage.getItem('donations')) || [];
-            donations.push(donation);
-            localStorage.setItem('donations', JSON.stringify(donations));
-
-            // Display the toast message
-            showToast(`Thank you ${donation.name}, your donation has been scheduled.`);
-
-            // Reset the form after submission
-            this.reset();
-        });
-
-        function showToast(message) {
-            const toast = document.createElement('div');
-            toast.className = 'toast';
-            toast.textContent = message;
-            document.body.appendChild(toast);
-
-            setTimeout(function() {
-                toast.classList.add('fade-out');
-                toast.addEventListener('transitionend', function() {
-                    toast.remove();
-                });
-            }, 3000);
-        }
-    </script>
 </body>
 </html>
